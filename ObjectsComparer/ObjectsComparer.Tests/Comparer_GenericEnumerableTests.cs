@@ -149,7 +149,8 @@ namespace ObjectsComparer.Tests
 
             CollectionAssert.IsNotEmpty(differences);
             Assert.AreEqual(1, differences.Count);
-            Assert.AreEqual("CollectionOfB.Count", differences[0].MemberPath);
+            Assert.AreEqual(DifferenceTypes.NumberOfElementsMismatch, differences[0].DifferenceType);
+            Assert.AreEqual("CollectionOfB", differences[0].MemberPath);
             Assert.AreEqual("2", differences[0].Value1);
             Assert.AreEqual("1", differences[0].Value2);
         }
@@ -224,7 +225,8 @@ namespace ObjectsComparer.Tests
 
             CollectionAssert.IsNotEmpty(differences);
             Assert.AreEqual(1, differences.Count);
-            Assert.AreEqual("ClassImplementsCollectionOfB.Count", differences[0].MemberPath);
+            Assert.AreEqual(DifferenceTypes.NumberOfElementsMismatch, differences[0].DifferenceType);
+            Assert.AreEqual("ClassImplementsCollectionOfB", differences[0].MemberPath);
             Assert.AreEqual("2", differences[0].Value1);
             Assert.AreEqual("1", differences[0].Value2);
         }
@@ -432,6 +434,44 @@ namespace ObjectsComparer.Tests
             Assert.AreEqual(1, differences.Count);
             Assert.IsTrue(differences.Any(
                 d => d.MemberPath == string.Empty && d.DifferenceType == DifferenceTypes.ValueMismatch));
+        }
+
+        [Test]
+        public void IgnoreCapacityForLists()
+        {
+            var a1 = new A
+            {
+                ListOfB = new List<B> { new B { Property1 = "str2" }, new B { Property1 = "str2" } }
+            };
+
+            var a2 = new A
+            {
+                ListOfB = new List<B> { new B { Property1 = "str2" }, new B { Property1 = "str2" } }
+            };
+
+            a1.ListOfB.TrimExcess();
+
+            var comparer = new Comparer<A>();
+
+            var isEqual = comparer.Compare(a1, a2);
+
+            Assert.IsTrue(isEqual);
+        }
+
+        [Test]
+        public void CompareAsIList()
+        {
+            var list1 = new List<int> { 1, 2 };
+            var list2 = new List<int> { 1 };
+
+            var comparer = new Comparer<IList<int>>();
+
+            var differences = comparer.CalculateDifferences(list1, list2).ToList();
+
+            Assert.AreEqual(1, differences.Count);
+            Assert.AreEqual(DifferenceTypes.NumberOfElementsMismatch, differences.First().DifferenceType);
+            Assert.AreEqual("2", differences.First().Value1);
+            Assert.AreEqual("1", differences.First().Value2);
         }
     }
 }
